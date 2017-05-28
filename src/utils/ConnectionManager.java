@@ -16,5 +16,6 @@ public class ConnectionManager {
         kryo.register(ClickPacket.class);
         kryo.register(RemoveBulletPacket.class);
         kryo.register(NamePacket.class);
+        kryo.register(NotificationPacket.class);
     }
 }

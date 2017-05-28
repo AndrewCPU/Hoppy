@@ -92,8 +92,8 @@ public class World {
             String name = getPlayerFromUUID(UUID.fromString(packet.getUuid())).getName();
             getPlayerFromUUID(UUID.fromString(packet.getUuid())).apply(packet);
             String name2 = getPlayerFromUUID(UUID.fromString(packet.getUuid())).getName();
-            if(!name.equals(name2))
-                Game.getInstance().canvas.showNotification(new Notification(name2 + " has joined the game..."));
+//            if(!name.equals(name2))
+//                Game.getInstance().canvas.showNotification(new Notification(name2 + " has joined the game..."));
 
 
         }

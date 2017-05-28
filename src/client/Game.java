@@ -98,7 +98,7 @@ public class Game extends JFrame implements KeyListener,MouseListener{
         if(o instanceof RemovePlayerPacket ){
             Player player = world.getPlayerFromUUID(UUID.fromString(((RemovePlayerPacket)o).getUUID()));
             world.removePlayer(world.getPlayerFromUUID(UUID.fromString(((RemovePlayerPacket) o).getUUID())));
-            canvas.showNotification(new Notification(player.getName() + " has left the game..."));
+            //canvas.showNotification(new Notification(player.getName() + " has left the game..."));
         }
         if( o instanceof RemoveBulletPacket){
             world.removeBullet(world.getBulletFromUUID(UUID.fromString(((RemoveBulletPacket)o).getUUID())));
@@ -106,6 +106,13 @@ public class Game extends JFrame implements KeyListener,MouseListener{
         if(o instanceof NamePacket){
             UUID uuid = UUID.fromString(((NamePacket) o).getUuid());
             this.uuid = uuid;
+        }
+        if(o instanceof NotificationPacket){
+            NotificationPacket packet = (NotificationPacket)o;
+            if(packet.getUUID().length() != 0)
+                canvas.showNotification(new Notification(packet.getMessage(),UUID.fromString(packet.getUUID())));
+            else
+                canvas.showNotification(new Notification(((NotificationPacket)o).getMessage()));
         }
 //        Log.d("PACKET RECEIVED");
     }

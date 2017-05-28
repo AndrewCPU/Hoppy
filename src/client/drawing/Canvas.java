@@ -1,6 +1,8 @@
 package client.drawing;
 
 import client.Game;
+import client.gui.Chat;
+import client.gui.Message;
 import client.gui.Notification;
 import client.world.Bullet;
 import client.world.GameObject;
@@ -14,6 +16,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -58,7 +61,7 @@ public class Canvas extends JComponent implements MouseMotionListener{
         //250 = 10 + y
         if(Game.getInstance().getUUID() != null && world!=null && Game.getInstance() != null && world.getPlayerFromUUID(Game.getInstance().getUUID())!=null){
             xOffset = getWidth() / 2 - world.getPlayerFromUUID(Game.getInstance().getUUID()).getX();
-            yOffset = getHeight() / 2 - world.getPlayerFromUUID(Game.getInstance().getUUID()).getY();
+            yOffset = getHeight() - ((int)(getHeight() / 2.5)) - world.getPlayerFromUUID(Game.getInstance().getUUID()).getY();
         }
         //g.drawImage(background, (xOffset / 50) - xO,0, getWidth() + xO, getHeight(), null);
 
@@ -68,7 +71,25 @@ public class Canvas extends JComponent implements MouseMotionListener{
                 g.setColor(player.getColor());
                 g.fillRoundRect(player.getX() + xOffset,player.getY() + yOffset,50,50, 10, 10);
                 g.setColor(Color.WHITE);
-                g.drawString(player.getName(), player.getX() + xOffset, player.getY() + yOffset - 10);
+
+
+
+
+                g.fillOval(player.getX() + xOffset + 10, player.getY() + yOffset + 10, 10, 10);
+                g.fillOval(player.getX() + xOffset + 30, player.getY() + yOffset + 10, 10, 10);
+                g.setColor(Color.RED);
+                g.fillRoundRect(player.getX() + xOffset + 10, player.getY() + yOffset + 30, 30, 10, 6, 6);
+                int width = g.getFontMetrics().stringWidth(player.getName());
+                g.setColor(new Color(0,0,0,190));
+
+                g.fillRoundRect(player.getX() + 25 + xOffset - (width / 2) - 5, player.getY() + yOffset - 40, width + 10, 30, 2, 2);
+
+                g.setColor(Color.WHITE);
+
+
+
+
+                g.drawString(player.getName(), player.getX() + 25 + xOffset - (width/2), player.getY() + yOffset - 20);
             }
             for(GameObject object : world.getGameObjects()){
                 g.setColor(Color.GREEN);
@@ -130,25 +151,51 @@ public class Canvas extends JComponent implements MouseMotionListener{
 
 //        g.fillOval(cur.x,cur.y,50,50);
 
+        Notification notification = notifications.size() > 0 ? notifications.get(0) : null;
+        //drawChatGUI(g);
         if(notification == null)
             return;
+        if(notification.getUUID() == null){
+            int notificationWidth = getWidth() - (getWidth() / 2);
+            g.setColor(new Color(0,0,0, 224));
+            notification.step();
+            g.fillRoundRect(getWidth() / 4 ,notification.getY(),notificationWidth, 50, 6, 6);
+            //notification.setY(0);
 
-        int notificationWidth = getWidth() - (getWidth() / 2);
-        g.setColor(new Color(0,0,0, 224));
-        notification.step();
-        g.fillRoundRect(getWidth() / 4 ,notification.getY(),notificationWidth, 50, 6, 6);
-        //notification.setY(0);
+            int width = g.getFontMetrics().stringWidth(notification.getMessage());
 
-        int width = g.getFontMetrics().stringWidth(notification.getMessage());
+            g.setColor(Color.WHITE);
+            g.drawString(notification.getMessage(), getWidth() / 2 - (width / 2), 30 + notification.getY() );
+        }
+        else{
+            Player player = world.getPlayerFromUUID(notification.getUUID());
+            notification.step();
+            g.setColor(new Color(0,0,0, 224));
+            int width = g.getFontMetrics().stringWidth(notification.getMessage());
+            g.fillRoundRect(player.getX() + (25) - (width / 2) + xOffset - 3, player.getY() - 100 + yOffset, width + 6, 50, 2, 2 );
+            g.setColor(Color.WHITE);
+            g.drawString(notification.getMessage(), player.getX() + (25) - (width / 2) + xOffset + 3, player.getY() - 100 + yOffset + 30);
+        }
 
-        g.setColor(Color.WHITE);
-        g.drawString(notification.getMessage(), getWidth() / 2 - (width / 2), 30 + notification.getY() );
 
-
+        if(!notification.isAlive())
+            notifications.remove(0);
 
 
     }
-    public Notification notification = null;
+
+    public void drawChatGUI(Graphics g){
+        int chatWidth = getWidth() / 2;
+        int chatHeight = getHeight() - (getHeight() / 10 * 2);
+        g.setColor(new Color(255,255,255,199));
+        g.fillRoundRect((getWidth() / 2) - (chatWidth / 2), getHeight() / 10, chatWidth, chatHeight , 2, 2);
+        List<Chat> chats = new ArrayList<>();
+        chats.add(new Chat(Game.getInstance().getUUID()));
+        chats.get(0).getMessages().add(new Message(Game.getInstance().getUUID(), "test"));
+
+    }
+    public List<Notification> notifications = new ArrayList<>();
+//    public Notification notification = null;
     boolean movingDown = true;
     public static Map<Player, Integer> sortByValue(Map<Player, Integer> map) {
         return map.entrySet()
@@ -163,6 +210,7 @@ public class Canvas extends JComponent implements MouseMotionListener{
     }
 
     public void showNotification(Notification notification){
-        this.notification = notification;
+        notifications.add(notification);
+
     }
 }

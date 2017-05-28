@@ -1,7 +1,12 @@
 package server.world;
 
 import com.esotericsoftware.kryonet.Connection;
+import packets.NotificationPacket;
 import packets.PlayerPacket;
+import server.MPServer;
+import server.world.interfaces.Body;
+import server.world.interfaces.Interactable;
+import server.world.interfaces.Interaction;
 import server.world.interfaces.Tickable;
 import utils.Log;
 
@@ -12,7 +17,7 @@ import java.util.*;
 /**
  * Created by stein on 5/14/2017.
  */
-public class MPPlayer implements Tickable {
+public class MPPlayer implements Tickable, Body {
     private int width = 50, height = 50, x, y, score = 0;
     private UUID uuid = null;
     private java.util.List<Integer> keys = new ArrayList<>();
@@ -21,7 +26,11 @@ public class MPPlayer implements Tickable {
     private int yMod = 0;
     private Color color = getRandomColor();
 
+    private int killStreak = 0;
+
     private double velX = 0, velY = 0;
+
+    private int lastDirection = 0;
 
 
     private String name = "Guy" + new Random().nextInt(100);
@@ -96,6 +105,7 @@ public class MPPlayer implements Tickable {
     public void pressKey(int i){
         if(!keys.contains(i))
             keys.add(i);
+        onPress(i);
     }
     public void releaseKey(int i){
         if(keys.contains(i))
@@ -133,6 +143,41 @@ public class MPPlayer implements Tickable {
         return yMod;
     }
 
+    public void onPress(int key){
+        if(key == KeyEvent.VK_F){
+
+            int x = lastDirection * width + (lastDirection * 5);
+
+            world.addObject(new MPInteractableObject(new Rectangle(getX() + x,getY(),getWidth(),getHeight()), Interaction.DOOR, world));
+        }
+        if(key == KeyEvent.VK_E){
+            for(MPObject object : world.getObjects()){
+
+                if(object.distance(this) <= 100)
+                {
+                    if(object instanceof Interactable){
+                        ((Interactable)object).interact();
+                    }
+                }
+            }
+            if(!(this instanceof MPNPC)) {
+                for (MPPlayer player : world.getPlayers()) {
+                    if (player instanceof Interactable) {
+                        if (player.distance(this) <= 100) {
+                            ((Interactable) player).interact(this);
+                        }
+                    }
+                }
+            }
+        }
+        if(key == KeyEvent.VK_D){
+            lastDirection = 1;
+        }
+        else if(key == KeyEvent.VK_A){
+            lastDirection = -1;
+        }
+    }
+
     @Override
     public void tick() {
 
@@ -165,6 +210,9 @@ public class MPPlayer implements Tickable {
             setX(random.nextBoolean() ? random.nextInt(4000) : -random.nextInt(4000));
             setY(0);
 //            world.getBullets().forEach((b)->b.setAlive(false));
+        }
+        if (!world.isSafeMove((int)(x + velX), y)){
+             velX = 0;
         }
         x+=velX;
         if(velX > 0)
@@ -206,6 +254,22 @@ public class MPPlayer implements Tickable {
             setY(-5000);
             setScore(getScore() - 1);
         }
+
+//        for(MPObject o : world.getObjects()){
+//            if(o.getRectangle().intersects(new Rectangle(getX(),getY(),getWidth(),getHeight())))
+//                death(null);
+//        }
+
+    }
+
+    public void streak(){
+        killStreak++;
+        if(killStreak % 10 == 0 && killStreak % 100 != 0){
+            MPServer.getInstance().getServer().sendToAllTCP(new NotificationPacket(getName() + " is on fire! x" + killStreak));
+        }
+        else if(killStreak % 100 == 0){
+            MPServer.getInstance().getServer().sendToAllTCP(new NotificationPacket(getName() + " is absolutely killing it! x" + killStreak));
+        }
     }
 
     public int getScore() {
@@ -217,15 +281,36 @@ public class MPPlayer implements Tickable {
     }
 
     public void death(MPPlayer killer){
-        if(killer != null){
+
+        if(killer != null && !(this instanceof MPEnemy || killer instanceof MPEnemy)){
             killer.setScore(killer.getScore() + 1);
             setScore( score - 1);
-            setX(50);
-            setY(50);
+            if(score < 0)
+                setScore(0);
+            killer.streak();
+            MPServer.getInstance().getServer().sendToAllTCP(new NotificationPacket(getName() + " was killed by " + killer.getName()));
         }
+        Random random = new Random();
+        setX(50);
+        setY(50);
+        killStreak = 0;
     }
 
     public PlayerPacket getPacket(){
         return new PlayerPacket(getUUID().toString(),getX(),getY(),  getScore(), color.getRed(), color.getGreen(), color.getBlue(), getName());
     }
+
+    public double distance(MPPlayer player){
+        return new Point(getX(),getY()).distance(player.getX(),player.getY());
+    }
+
+    public Rectangle getRectangle(){
+        return new Rectangle(getX(),getY(),getWidth(),getHeight());
+    }
+
+    @Override
+    public double distance(Body body) {
+        return new Point(body.getRectangle().x,body.getRectangle().y).distance(new Point(getRectangle().x,getRectangle().y));
+    }
+
 }

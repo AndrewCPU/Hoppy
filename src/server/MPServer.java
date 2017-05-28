@@ -1,24 +1,22 @@
 package server;
 
+import client.world.Player;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import packets.ClickPacket;
-import packets.KeyPacket;
-import packets.NamePacket;
-import packets.RemovePlayerPacket;
-import server.world.MPBullet;
-import server.world.MPObject;
-import server.world.MPPlayer;
-import server.world.MPWorld;
-import server.world.MPPhysicsObject;
+import packets.*;
+import server.world.*;
+import server.world.Action;
+import server.world.interfaces.Interaction;
 import utils.ConnectionManager;
 import utils.Log;
+import utils.NPCMaker;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -45,7 +43,7 @@ public class MPServer {
 
     public MPServer(){
         instance = this;
-        server = new Server();
+        server = new Server(16384 * 2, 2048 * 2);
         try {
             server.bind(TCP,UDP);
         } catch (IOException e) {
@@ -105,10 +103,103 @@ public class MPServer {
             }
         });
         command.setVisible(true);
-        generateMap();
+//        generateMap();
+        generateDemo();
         //acceptCommand("object load J:\\Map1.txt");
 
     }
+
+    public void generateDemo(){
+        int x = -4000;
+        int y = 1000;
+        int width = 8000;
+        int height = 500;
+        Random random = new Random();
+        MPObject object = new MPObject(new Rectangle(x,y,width,height),world);
+        world.addObject(object);
+        MPNPC questGiver = NPCMaker.createNPC(50,50,world,"Welcome! They call me %last_name%, %name%... I need your help fighting the ninjas! Follow me!");
+        Action reset = new Action(questGiver,9999999){
+            @Override
+            public void run() {
+                getNpc().pressKey(KeyEvent.VK_A);
+                if(getNpc().getX() <= 50)
+                    setDuration(0);
+            }
+
+            @Override
+            public void finish() {
+                getNpc().releaseKey(KeyEvent.VK_A);
+                questGiver.setMessages("Oh hello! The castle is to the right! Go check it out if you haven't yet. But beware!");
+                //getNpc().addAction(starterAction);
+            }
+        };
+        Action starterAction = new Action(questGiver,99999) {
+            @Override
+            public void run() {
+                getNpc().pressKey(KeyEvent.VK_D);
+                if(getNpc().getX() >= 1800)
+                    setDuration(0);
+            }
+
+            @Override
+            public void finish() {
+                getNpc().releaseKey(KeyEvent.VK_D);
+                getNpc().getTrigger().getConnection().sendTCP(new NotificationPacket("The ninjas are right past this door! To get through the door walk up to it and press 'E'.", getNpc().getUUID().toString()));
+            }
+        };
+
+        questGiver.addAction(starterAction);
+        questGiver.addAction(reset);
+        MPInteractableObject door = new MPInteractableObject(new Rectangle(2000,0,100,999), Interaction.DOOR,world);
+        questGiver.addAction(new Action(questGiver,999999){
+            @Override
+            public void run() {
+                int ninjasLeft = 0;
+                for(MPPlayer p : world.getPlayers()){
+                    if(p instanceof MPEnemy){
+                        if(p.getName().equals("Ninja")){
+                            ninjasLeft++;
+                        }
+                    }
+                }
+                if(ninjasLeft == 0){
+                    getNpc().pressKey(KeyEvent.VK_D);
+//                    getNpc().pressKey(KeyEvent.VK_E);
+                    door.interact();
+                    if(getNpc().getX() >= 3250)
+                        setDuration(0);
+                }
+            }
+
+            @Override
+            public void finish() {
+                getNpc().getTrigger().getConnection().sendTCP(new NotificationPacket("Thank you so much! I can finally sleep in peace!", getNpc().getUUID().toString()));
+//                getNpc().releaseKey(KeyEvent.VK_E);
+                getNpc().releaseKey(KeyEvent.VK_D);
+            }
+        });
+        world.addPlayer(questGiver);
+
+        world.addObject(door);
+        MPObject wall = new MPObject(new Rectangle(3900,0, 100, 999), world);
+        MPObject roof = new MPObject(new Rectangle(2000,0, 2000, 100), world);
+        world.addObject(wall);
+        world.addObject(roof);
+        for(int i = 0; i<5; i++){
+            int randX = random.nextInt(3900 - 2100) + 2100 ;
+            MPEnemy enemy = new MPEnemy(randX, 150, world){
+                @Override
+                public void death(MPPlayer killer) {
+                    removePlayer(this);
+                }
+            };
+            Log.d("ENEMY:" + randX);
+            enemy.setName("Ninja");
+            world.addPlayer(enemy);
+        }
+
+    }
+
     public void generateMap(){
         int x = -4000;
         int y = 1000;
@@ -117,23 +208,49 @@ public class MPServer {
         MPObject object = new MPObject(new Rectangle(x,y,width,height),world);
         world.addObject(object);
         Random r = new Random();
+        outer:
         for(int i = 0; i< 20; i++){
             int blockX = r.nextBoolean() ? r.nextInt(4000) : -r.nextInt(4000);
             int blockY = r.nextInt(800);
             int blockWidth = r.nextInt(400 - 100) + 100;
             int blockHeight = r.nextInt(200 - 50) + 50;
             blockY -= blockHeight;
-            boolean bad = false;
+//            boolean bad = false;
             MPObject o = new MPObject(new Rectangle(blockX,blockY,blockWidth,blockHeight),world);
             for(MPObject mpObject : world.getObjects()){
                 if(mpObject.getRectangle().intersects(o.getRectangle())){
-                    bad = true;
-                    i--;
+                    continue outer;
+//                    i--;
                 }
             }
-            if(!bad)
-                world.addObject(o);
+            world.addObject(o);
         }
+
+
+
+        MPObject wallLeft = new MPObject(new Rectangle(-4050,-1000,50,4000), world);
+        MPObject wallRight = new MPObject(new Rectangle(4000,-1000,50,4000), world);
+        world.addObject(wallLeft);
+        world.addObject(wallRight);
+
+        for(int i = 0; i<5; i++){
+            int pX = r.nextBoolean()  ? -r.nextInt(3000) : r.nextInt(3000);
+            int pY = -r.nextInt(1000);
+            int pW = r.nextInt(400 - 200) + 200;
+            int pH = 100;
+            MPPhysicsObject phys = new MPPhysicsObject(new Rectangle(pX,pY,pW,pH),world,false);
+//            phys.velocity = r.nextInt(6 - 1) + 1;
+            world.addObject(phys);
+        }
+
+        for(int i = 0; i<3; i++){
+            int eX  = r.nextBoolean() ? -r.nextInt(3000)  : r.nextInt(3000);
+//            MPEnemy enemy = new MPEnemy(eX,0, world);
+//            enemy.setName("Enemy");
+
+            world.addPlayer(NPCMaker.createNPC(eX,0,world,"Hi there how are you today?", "I'm really sad lately,", "Do you want to be my friend?", "They call me %name%."));
+        }
+
 
     }
     public java.util.List<MPObject> getObjectsFromFile(File file){
@@ -191,12 +308,32 @@ public class MPServer {
                     world.addObject(physicsObject);
                 }
             }
+            else if(split[0].equals("e")){
+                if(split[1].equals("c")){
+                    MPPlayer player = world.getPlayer(split[2]);
+                    MPEnemy enemy = new MPEnemy(player.getX(),player.getY(),world);
+                    enemy.setName(split[3]);
+                    world.addPlayer(enemy);
+                }
+            }
+            else if(split[0].equalsIgnoreCase("kill")){
+                if(split[1].equals("all")){
+                    for(MPPlayer player : world.getPlayers())
+                        player.death(null);
+                }
+                else{
+                    MPPlayer p = world.getPlayer(split[2]);
+                    if(p == null) return;
+                    p.death(null);
+                }
+            }
         }
     }
     public void updatePlayers(){
         List<MPPlayer> deadPlayers = new ArrayList<>();
         for(MPPlayer player : world.getPlayers()) {
-            if(player.getConnection().isConnected())
+
+            if(player.getConnection() == null || player.getConnection().isConnected())
             {
                 server.sendToAllTCP(player.getPacket());
             }
@@ -213,10 +350,23 @@ public class MPServer {
             server.sendToAllTCP(bullet.getPacket());
     }
 
+    public void click(MPPlayer player, Point point){
+        double rise = 1 - (point.y - (player.getY() - 1));
+        double run = 1 - (point.x - (player.getX() - 1));
+        // Log.d("");
+        //Log.d(rise + " = rise");
+        //Log.d(run+ " = run");
 
+
+        MPBullet bullet = new MPBullet(player.getX() + 25, player.getY() + 25, -run, -rise,player,world);
+        //System.out.println(slope);
+        world.addBullet(bullet);
+    }
     public void receive(Connection connection, Object o){
         if(o instanceof KeyPacket){
             KeyPacket packet = (KeyPacket)o;
+            if(world.getPlayer(connection) == null)
+                return;
             if(packet.isPress()){
                 world.getPlayer(connection).pressKey(packet.getKey());
             }
@@ -227,34 +377,36 @@ public class MPServer {
         if(o instanceof ClickPacket){
             ClickPacket packet = (ClickPacket)o;
             MPPlayer player = world.getPlayer(connection);
-
-            double rise = 1 - (packet.getY() - (player.getY() - 1));
-            double run = 1 - (packet.getX() - (player.getX() - 1));
-           // Log.d("");
-            //Log.d(rise + " = rise");
-            //Log.d(run+ " = run");
-
-
-            MPBullet bullet = new MPBullet(player.getX() + 25, player.getY() + 25, -run, -rise,player,world);
-            //System.out.println(slope);
-            world.addBullet(bullet);
+            click(player, new Point(packet.getX(),packet.getY()));
         }
         if(o instanceof NamePacket){
             MPPlayer player = world.getPlayer(connection);
+            if(player == null)
+                return;
             player.setName(((NamePacket)o).getName());
 
-            ((NamePacket) o).setUuid(player.getUUID().toString());
+            //((NamePacket) o).setUuid(player.getUUID().toString());
 
+            NamePacket packet = new NamePacket("");
+            packet.setUuid(player.getUUID().toString());
 
+            connection.sendTCP(packet);
 
-            connection.sendTCP(o);
+            server.sendToAllTCP(new NotificationPacket(player.getName() + " has joined the game..."));
+
 
         }
     }
-    public void disconnect(Connection connection){
-        RemovePlayerPacket removePlayerPacket = new RemovePlayerPacket(world.getPlayer(connection).getUUID().toString());
+
+    public void removePlayer(MPPlayer player){
+        RemovePlayerPacket removePlayerPacket = new RemovePlayerPacket(player.getUUID().toString());
         server.sendToAllTCP(removePlayerPacket);
-        world.getPlayers().remove(world.getPlayer(connection));
+        world.getPlayers().remove(player);
+        //server.sendToAllTCP(new NotificationPacket(player.getName() + " has left the game..."));
+    }
+    public void disconnect(Connection connection){
+        MPPlayer player = world.getPlayer(connection);
+        removePlayer(player);
         //Log.i("A player has disconnected from " + connection.getRemoteAddressTCP().toString());
     }
 

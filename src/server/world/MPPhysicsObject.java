@@ -24,16 +24,20 @@ public class MPPhysicsObject extends MPObject {
 //            Log.d(y + "");
             Rectangle rectangle = (Rectangle)lastRect.clone();
 //            rectangle.add(0,velocity > 0 ? 1 : -1);
+
+            int velDupe = 1;
+
             if(up)
-                rectangle = new Rectangle(rectangle.x + 0, rectangle.y + (velocity > 0 ? 1 : -1), rectangle.width, rectangle.height);
+                rectangle = new Rectangle(rectangle.x + 0, rectangle.y + (velocity > 0 ? velDupe : -velDupe), rectangle.width, rectangle.height);
             if(!up)
-                rectangle = new Rectangle(rectangle.x + (velocity > 0 ? 1 : -1), rectangle.y , rectangle.width, rectangle.height);
+                rectangle = new Rectangle(rectangle.x + (velocity > 0 ? velDupe : -velDupe), rectangle.y , rectangle.width, rectangle.height);
+
             for(MPObject o : getWorld().getObjects()){
                 if(o != this){
                     if(o.getRectangle().intersects(rectangle)){
                         setRectangle(lastRect);
                         velocity = -velocity;
-                        Log.d("BREAKING");
+//                        Log.d("BREAKING");
                         break __outerLoop;
                     }
                 }

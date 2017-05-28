@@ -7,4 +7,5 @@ import java.awt.*;
  */
 public interface Body {
     Rectangle getRectangle();
+    double distance(Body body);
 }

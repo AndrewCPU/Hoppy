@@ -93,6 +93,35 @@ public class MPWorld {
     }
 
 
+    public MPPlayer getNearestPlayer(MPPlayer player){
+        MPPlayer closest = null;
+        for(MPPlayer p : players){
+            if(p != player && !(p instanceof MPEnemy)){
+                if(closest == null)
+                    closest = p;
+                else if(p.distance(player) < player.distance(closest)){
+                    closest = p;
+                }
+            }
+        }
+        return closest;
+    }
+
+    public MPBullet getNearestBullet(MPPlayer player){
+        MPBullet closest = null;
+        for(MPBullet p : bullets){
+            if(p.getShooter() == player)
+                continue;
+                if(closest == null)
+                    closest = p;
+                else if(p.distance(player) < player.distance(closest)){
+                    closest = p;
+                }
+        }
+        return closest;
+    }
+
+
     public void tick(){
         for(Object o : objectQueue){
             if(o instanceof MPBullet)

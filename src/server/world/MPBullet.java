@@ -150,7 +150,7 @@ public class MPBullet implements Tickable,Body{
 //        x+=slope > 0 ? -1 : 1;
 
         if(getX() > 50000 || getX() < - 50000 || getY() > 50000 || getY() < - 50000){
-        //    Log.e("DIED");
+        //    Log.e("DIED");ddaa
             setAlive(false);
         }
     }
@@ -158,4 +158,10 @@ public class MPBullet implements Tickable,Body{
     public BulletPacket getPacket(){
         return new BulletPacket((int)getX(),(int)getY(),(int)getWidth(),(int)getHeight(),getUUID());
     }
+
+    @Override
+    public double distance(Body body) {
+        return new Point(body.getRectangle().x,body.getRectangle().y).distance(new Point(getRectangle().x,getRectangle().y));
+    }
+
 }

@@ -1,5 +1,7 @@
 package client.gui;
 
+import java.util.UUID;
+
 /**
  * Created by stein on 5/25/2017.
  */
@@ -10,9 +12,16 @@ public class Notification {
     private String message;
     private boolean opening = true;
     private boolean alive = true;
+    private UUID uuid;
 
     public Notification(String message) {
         this.message = message;
+    }
+
+
+    public Notification(String message, UUID uuid) {
+        this.message = message;
+        this.uuid = uuid;
     }
 
     public void step(){
@@ -52,5 +61,21 @@ public class Notification {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public boolean isAlive() {
+        return alive;
+    }
+
+    public void setAlive(boolean alive) {
+        this.alive = alive;
+    }
+
+    public UUID getUUID() {
+        return uuid;
+    }
+
+    public void setUUID(UUID uuid) {
+        this.uuid = uuid;
     }
 }
