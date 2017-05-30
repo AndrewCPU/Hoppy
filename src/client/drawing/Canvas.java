@@ -26,6 +26,7 @@ public class Canvas extends JComponent implements MouseMotionListener{
     private World world;
     private Image background;
     private Point cur;
+    private ImageDatabase database = new ImageDatabase();
     public Canvas(World world){
         //addMouseMotionListener(this);
         this.world = world;
@@ -55,7 +56,7 @@ public class Canvas extends JComponent implements MouseMotionListener{
 
     @Override
     public void paint(Graphics g) {
-        g.setColor(new Color(135,206,250)); //todo follow uid
+        g.setColor(new Color(127,160, 167)); //todo follow uid
         int yOffset = 0;
         int xOffset = 0;
         //250 = 10 + y
@@ -63,9 +64,15 @@ public class Canvas extends JComponent implements MouseMotionListener{
             xOffset = getWidth() / 2 - world.getPlayerFromUUID(Game.getInstance().getUUID()).getX();
             yOffset = getHeight() - ((int)(getHeight() / 2.5)) - world.getPlayerFromUUID(Game.getInstance().getUUID()).getY();
         }
-        //g.drawImage(background, (xOffset / 50) - xO,0, getWidth() + xO, getHeight(), null);
 
         g.fillRect(0,0,getWidth(),getHeight());
+
+
+        int yOf = (yOffset / 6);
+        g.drawImage(background,   -getWidth() + (xOffset / 6),0 + yOf, getWidth(), getHeight(), null);
+        g.drawImage(background, (xOffset / 6),0 + yOf, getWidth(), getHeight(), null);
+        g.drawImage(background, getWidth() + (xOffset / 6),0 + yOf, getWidth(), getHeight(), null);
+
         try{
             for(Player player : world.getPlayers()){
                 g.setColor(player.getColor());
@@ -116,8 +123,10 @@ public class Canvas extends JComponent implements MouseMotionListener{
                 }
 
                 g.fillRoundRect(object.getRectangle().x + xOffset,object.getRectangle().y + yOffset + 20,object.getRectangle().width,object.getRectangle().height - 20,6,6);
-
-
+                if(object.getImage().length()>0) {
+                    BufferedImage img = database.get(object.getImage());
+                    g.drawImage(img,object.getRectangle().x + xOffset,object.getRectangle().y + yOffset,object.getRectangle().width, object.getRectangle().height, null);
+                }
             }
             for(Bullet bullet : world.getBullets()){
                 if(bullet.getX() + xOffset < 0 || bullet.getX() + xOffset> getWidth() || bullet.getY() + yOffset > getHeight() || bullet.getY() + yOffset < 0)
@@ -128,12 +137,9 @@ public class Canvas extends JComponent implements MouseMotionListener{
 
             }
         }catch (ConcurrentModificationException ex){}
-
-        g.setColor(new Color(255,255,255,90));
-        g.fillRoundRect(getWidth() - 250, -5, 250, 500, 5, 5);
-        g.setColor(Color.WHITE);
         Graphics2D g2 = (Graphics2D)g;
         g2.setFont(new Font("Arial Black",0,25));
+        g.setColor(Color.WHITE);
         g2.drawString("Leader Board",getWidth() - 220, 25);
         HashMap<Player,Integer> ints = new HashMap<>();
         for(Player player : world.getPlayers()){
@@ -141,12 +147,24 @@ public class Canvas extends JComponent implements MouseMotionListener{
         }
         Map<Player,Integer> sorted = sortByValue(ints);
         int y = 60;
+
+
         g2.setFont(new Font("Calibri",0,20));
         for(int i = sorted.keySet().size() - 1; i>= 0; i--){
+            if(((Player)sorted.keySet().toArray()[i]).isShowInLeaderBoard())
+                y+=25;
+        }
+        g.setColor(new Color(255,255,255,90));
+        g.fillRoundRect(getWidth() - 250, -5, 250, y + 5, 5, 5);
+        g.setColor(Color.WHITE);
+        y = 60;
+        for(int i = sorted.keySet().size() - 1; i>= 0; i--){
             Player player = (Player)sorted.keySet().toArray()[i];
-            g2.drawString(player.getName() , getWidth() - 230, y);
-            g2.drawString(player.getScore() + "", getWidth() - 75, y);
-            y+=25;
+            if(player.isShowInLeaderBoard()) {
+                g2.drawString(player.getName(), getWidth() - 230, y);
+                g2.drawString(player.getScore() + "", getWidth() - 75, y);
+                y += 25;
+            }
         }
 
 //        g.fillOval(cur.x,cur.y,50,50);
@@ -167,14 +185,16 @@ public class Canvas extends JComponent implements MouseMotionListener{
             g.setColor(Color.WHITE);
             g.drawString(notification.getMessage(), getWidth() / 2 - (width / 2), 30 + notification.getY() );
         }
-        else{
+        else {
             Player player = world.getPlayerFromUUID(notification.getUUID());
-            notification.step();
-            g.setColor(new Color(0,0,0, 224));
-            int width = g.getFontMetrics().stringWidth(notification.getMessage());
-            g.fillRoundRect(player.getX() + (25) - (width / 2) + xOffset - 3, player.getY() - 100 + yOffset, width + 6, 50, 2, 2 );
-            g.setColor(Color.WHITE);
-            g.drawString(notification.getMessage(), player.getX() + (25) - (width / 2) + xOffset + 3, player.getY() - 100 + yOffset + 30);
+            if (player != null) {
+                notification.step();
+                g.setColor(new Color(0, 0, 0, 224));
+                int width = g.getFontMetrics().stringWidth(notification.getMessage());
+                g.fillRoundRect(player.getX() + (25) - (width / 2) + xOffset - 3, player.getY() - 100 + yOffset, width + 6, 50, 2, 2);
+                g.setColor(Color.WHITE);
+                g.drawString(notification.getMessage(), player.getX() + (25) - (width / 2) + xOffset + 3, player.getY() - 100 + yOffset + 30);
+            }
         }
 
 
@@ -187,11 +207,25 @@ public class Canvas extends JComponent implements MouseMotionListener{
     public void drawChatGUI(Graphics g){
         int chatWidth = getWidth() / 2;
         int chatHeight = getHeight() - (getHeight() / 10 * 2);
-        g.setColor(new Color(255,255,255,199));
+        g.setColor(new Color(255,255,255,210));
         g.fillRoundRect((getWidth() / 2) - (chatWidth / 2), getHeight() / 10, chatWidth, chatHeight , 2, 2);
         List<Chat> chats = new ArrayList<>();
         chats.add(new Chat(Game.getInstance().getUUID()));
         chats.get(0).getMessages().add(new Message(Game.getInstance().getUUID(), "test"));
+
+        int y = getHeight() / 10;
+        int x = (getWidth() / 2) - (chatWidth / 2);
+
+        for(Chat chat : chats){
+            Player player = world.getPlayerFromUUID(chat.getUser());
+            if(player == null)
+                continue;
+            g.setColor(Color.BLACK);
+            g.drawString(player.getName(), x+20, y + 50);
+            y += 100;
+            g.drawLine(x,y,x+chatWidth,y);
+        }
+
 
     }
     public List<Notification> notifications = new ArrayList<>();

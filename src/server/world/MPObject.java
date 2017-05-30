@@ -14,7 +14,7 @@ public class MPObject implements Tickable, Body{
     private Rectangle rectangle;
     private MPWorld world;
     private String uuid = UUID.randomUUID().toString();
-
+    private String image = "";
     public MPObject(Rectangle rectangle, MPWorld world) {
         this.rectangle = rectangle;
         this.world = world;
@@ -45,8 +45,23 @@ public class MPObject implements Tickable, Body{
 
     }
 
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     public ObjectPacket getPacket(){
-        return new ObjectPacket(rectangle.x,rectangle.y,rectangle.width,rectangle.height,uuid);
+        int type = 0;
+        if(this instanceof MPPhysicsObject){
+            type = 1;
+        }
+        else if(this instanceof MPInteractableObject){
+            type = 2;
+        }
+        return new ObjectPacket(rectangle.x,rectangle.y,rectangle.width,rectangle.height,uuid, type, image);
     }
 
     @Override

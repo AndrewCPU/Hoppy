@@ -136,8 +136,9 @@ public class MPWorld {
             bullet.tick();
         for(MPPlayer player : players)
             player.tick();
-        for(MPObject object : objects)
+        for(MPObject object : objects) {
             object.tick();
+        }
         for(int i = bullets.size() - 1; i>=0; i--) {
             if (!bullets.get(i).isAlive()) {
                 MPServer.getInstance().getServer().sendToAllTCP(new RemoveBulletPacket(bullets.remove(i).getUUID()));

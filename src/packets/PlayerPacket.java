@@ -7,6 +7,7 @@ public class PlayerPacket {
     private String uuid;
     private int x, y, score, red, green, blue;
     private String name;
+    private boolean showInLeaderBoard = true;
 
     public PlayerPacket(String uuid, int x, int y, String name) {
         this.uuid = uuid;
@@ -31,6 +32,26 @@ public class PlayerPacket {
         this.green = green;
         this.blue = blue;
         this.name = name;
+    }
+
+    public PlayerPacket(String uuid, int x, int y, int score, int red, int green, int blue, String name, boolean showInLeaderBoard) {
+        this.uuid = uuid;
+        this.x = x;
+        this.y = y;
+        this.score = score;
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+        this.name = name;
+        this.showInLeaderBoard = showInLeaderBoard;
+    }
+
+    public boolean isShowInLeaderBoard() {
+        return showInLeaderBoard;
+    }
+
+    public void setShowInLeaderBoard(boolean showInLeaderBoard) {
+        this.showInLeaderBoard = showInLeaderBoard;
     }
 
     public int getRed() {

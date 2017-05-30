@@ -119,12 +119,12 @@ public class Game extends JFrame implements KeyListener,MouseListener{
 
     public Point getOffsets(){
 
-        int xOffset = 0;
         int yOffset = 0;
+        int xOffset = 0;
         //250 = 10 + y
-        if(Game.getInstance().getUUID() != null){
+        if(Game.getInstance().getUUID() != null && world!=null && Game.getInstance() != null && world.getPlayerFromUUID(Game.getInstance().getUUID())!=null){
             xOffset = getWidth() / 2 - world.getPlayerFromUUID(Game.getInstance().getUUID()).getX();
-            yOffset = getHeight() / 2 - world.getPlayerFromUUID(Game.getInstance().getUUID()).getY();
+            yOffset = getHeight() - ((int)(getHeight() / 2.5)) - world.getPlayerFromUUID(Game.getInstance().getUUID()).getY();
         }
 
         return new Point(xOffset,yOffset);

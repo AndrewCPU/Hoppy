@@ -2,6 +2,8 @@ package server.world;
 
 import com.esotericsoftware.kryonet.Connection;
 import packets.NotificationPacket;
+import packets.PlayerPacket;
+import server.MPServer;
 import server.world.interfaces.Interactable;
 import server.world.interfaces.Interaction;
 
@@ -49,7 +51,8 @@ public class MPNPC extends MPPlayer implements Interactable{
         int i = r.nextInt(messages.length);
         player.getConnection().sendTCP(new NotificationPacket(messages[i], getUUID().toString()));
         currentAction = 0;
-        trigger = player;
+        if(trigger == null)
+            trigger = player;
     }
 
     @Override
@@ -67,6 +70,11 @@ public class MPNPC extends MPPlayer implements Interactable{
     }
 
     @Override
+    public PlayerPacket getPacket() {
+        return new PlayerPacket(getUUID().toString(),getX(),getY(),  getScore(), getColor().getRed(), getColor().getGreen(), getColor().getBlue(), getName(), false);
+    }
+
+    @Override
     public Interaction getInteraction() {
         return null;
     }
@@ -78,4 +86,5 @@ public class MPNPC extends MPPlayer implements Interactable{
     public void setTrigger(MPPlayer trigger) {
         this.trigger = trigger;
     }
+
 }

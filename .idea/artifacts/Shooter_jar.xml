@@ -3,6 +3,7 @@
     <output-path>J:/Desktop2016School</output-path>
     <root id="archive" name="Shooter.jar">
       <element id="module-output" name="Shooter" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/json/json/20170516/json-20170516.jar" path-in-jar="/" />
       <element id="extracted-dir" path="J:/Desktop2016School/kryonet-2.21/kryonet-2.21-all.jar" path-in-jar="/" />
     </root>
   </artifact>

@@ -150,7 +150,7 @@ public class MPServer {
 
         questGiver.addAction(starterAction);
         questGiver.addAction(reset);
-        MPInteractableObject door = new MPInteractableObject(new Rectangle(2000,0,100,999), Interaction.DOOR,world);
+        MPInteractableObject door = new MPInteractableObject(new Rectangle(2000,800,100,199), Interaction.DOOR,world);
         questGiver.addAction(new Action(questGiver,999999){
             @Override
             public void run() {
@@ -164,8 +164,8 @@ public class MPServer {
                 }
                 if(ninjasLeft == 0){
                     getNpc().pressKey(KeyEvent.VK_D);
-//                    getNpc().pressKey(KeyEvent.VK_E);
-                    door.interact();
+                    if(getNpc().getX() >= 1900 && getNpc().getX() < 2150)
+                        door.interact();
                     if(getNpc().getX() >= 3250)
                         setDuration(0);
                 }
@@ -173,21 +173,73 @@ public class MPServer {
 
             @Override
             public void finish() {
-                getNpc().getTrigger().getConnection().sendTCP(new NotificationPacket("Thank you so much! I can finally sleep in peace!", getNpc().getUUID().toString()));
-//                getNpc().releaseKey(KeyEvent.VK_E);
+                getNpc().speakTo(getNpc().getTrigger(),"Thank you so much! I can finally sleep in peace!");
+
+                getNpc().speakTo(getNpc().getTrigger(), "Take $100 to show my gratitude!");
+
+                getNpc().getTrigger().speakTo(getNpc().getTrigger(), "Not a problem! My pleasure! I enjoyed it anyways, I hate ninjas..");
+
+                getNpc().speakTo(getNpc().getTrigger(), "If you ever need anything, I'll be right here in my castle..");
+
+                getNpc().getTrigger().setScore(getNpc().getTrigger().getScore() + 100);
+
+                getNpc().setMessages("*mumbling* Man... That " + getNpc().getTrigger().getName() + " character is such a nice person...");
+
                 getNpc().releaseKey(KeyEvent.VK_D);
+
+                spawnVillagers();
+            }
+
+
+            public void spawnVillagers(){
+                for(int i = 1500; i<1900; i+=random.nextInt(120 - 50) + 50){
+                    int stopX =  new Random().nextInt(4000 - 2500) + 2500;
+                    MPNPC npc = NPCMaker.createNPC(i, 500, world,"I can't wait to get back out there and fight some monsters!", "For some reason the ground floats around way above the castle...","Life is great*!","Perhaps the castle is haunted, that's why it's always getting taken over.","Gosh sometimes I wish our castle was bigger...","Did you hear about the ninjas?!?","I'm so glad that " + getNpc().getTrigger().getName() + " got rid of the ninjas. What a legend...","I'm going to start writing this in the history books!","It is 10:58PM and I'm writing dialog. help.","Well hello!", "I work for " + getNpc().getName() + "...", "My name is %name%.", getNpc().getName() + " likes to make stupid James Bond quotes whenever he meets new people..", "Man. I missed our castle thank you so much!");
+                    npc.addAction(new Action(npc,99999){
+                        @Override
+                        public void run() {
+                            getNpc().pressKey(KeyEvent.VK_D);
+                            if(getNpc().getX() >= 1900 && getNpc().getX() < 2150)
+                                door.interact();
+                            if(getNpc().getX() >= stopX){
+                                setDuration(0);
+                            }
+                        }
+
+                        @Override
+                        public void finish() {
+                            getNpc().releaseKey(KeyEvent.VK_D);
+                        }
+                    });
+                    npc.interact(getNpc().getTrigger());
+                    world.addPlayer(npc);
+                }
             }
         });
         world.addPlayer(questGiver);
-
+        door.setImage("http://www.glenviewdoors.com/PRODUCT-DETAILS-Stock-Entry-Doors-GD/012T_Mahogany-Walnut/big.jpg");
         world.addObject(door);
         MPObject wall = new MPObject(new Rectangle(3900,0, 100, 999), world);
-        MPObject roof = new MPObject(new Rectangle(2000,0, 2000, 100), world);
+        MPObject wall2 = new MPObject(new Rectangle(-4100,0, 100, 1999), world);
+        MPObject roof = new MPObject(new Rectangle(2000,500, 1900, 100), world);
+
+        MPObject topDoor = new MPObject(new Rectangle(2000,500,100,300),world);
+
+
+
+        wall.setImage("http://media.indiedb.com/images/articles/1/119/118275/auto/Brick_Wall_01.jpg");
+        topDoor.setImage(wall.getImage());
+        wall2.setImage("http://media.indiedb.com/images/articles/1/119/118275/auto/Brick_Wall_01.jpg");
+
+        world.addObject(topDoor);
         world.addObject(wall);
+        world.addObject(wall2);
+
+        roof.setImage("https://s-media-cache-ak0.pinimg.com/736x/42/54/51/4254512a8d78430c334f8faec2e5367d.jpg");
         world.addObject(roof);
         for(int i = 0; i<5; i++){
             int randX = random.nextInt(3900 - 2100) + 2100 ;
-            MPEnemy enemy = new MPEnemy(randX, 150, world){
+            MPEnemy enemy = new MPEnemy(randX, 600, world){
                 @Override
                 public void death(MPPlayer killer) {
                     removePlayer(this);
@@ -197,6 +249,13 @@ public class MPServer {
             enemy.setName("Ninja");
             world.addPlayer(enemy);
         }
+        for(int YY = 0; YY<=480; YY+=150){
+            int XX = random.nextBoolean() ? -random.nextInt(3500) : random.nextInt(1500);
+            MPPhysicsObject physicsObject = new MPPhysicsObject(new Rectangle(XX, YY, 200, 140),world, false);
+            physicsObject.setImage("https://s-media-cache-ak0.pinimg.com/originals/dc/a6/95/dca6956e7b22e07ed1fc6110d124914b.jpg");
+            world.addObject(physicsObject);
+        }
+
 
     }
 

@@ -11,15 +11,18 @@ import java.util.UUID;
 public class Player {
 
     public static Player fromPacket(PlayerPacket packet){
-        return new Player(packet.getX(),packet.getY(), UUID.fromString(packet.getUuid()), packet.getName(), new Color(packet.getRed(), packet.getGreen(), packet.getBlue()));
+        return new Player(packet.getX(),packet.getY(), UUID.fromString(packet.getUuid()), packet.getName(), new Color(packet.getRed(), packet.getGreen(), packet.getBlue()), packet.isShowInLeaderBoard());
     }
 
 
     private int score = 0;
     private int x, y;
     private UUID uuid;
-    private String name = "";
+    private String name = " ";
     private Color color;
+
+    private boolean showInLeaderBoard = true;
+
     public Player(int x, int y, UUID uuid, Color color) {
         this.x = x;
         this.y = y;
@@ -35,6 +38,22 @@ public class Player {
         this.color = color;
     }
 
+    public Player(int x, int y, UUID uuid, String name, Color color, boolean showInLeaderBoard) {
+        this.x = x;
+        this.y = y;
+        this.uuid = uuid;
+        this.name = name;
+        this.color = color;
+        this.showInLeaderBoard = showInLeaderBoard;
+    }
+
+    public boolean isShowInLeaderBoard() {
+        return showInLeaderBoard;
+    }
+
+    public void setShowInLeaderBoard(boolean showInLeaderBoard) {
+        this.showInLeaderBoard = showInLeaderBoard;
+    }
 
     public Color getColor() {
         return color;

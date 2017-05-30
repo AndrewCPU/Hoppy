@@ -2,6 +2,7 @@ package server.world;
 
 import com.esotericsoftware.kryonet.Connection;
 import packets.NotificationPacket;
+import packets.PlayerPacket;
 import server.MPServer;
 import server.world.interfaces.Interactable;
 import server.world.interfaces.Interaction;
@@ -29,6 +30,7 @@ public class MPEnemy extends MPPlayer implements Interactable {
 
     public MPEnemy(int x, int y, MPWorld world) {
         super(x, y, null, world);
+        setColor(Color.BLACK);
     }
 
     @Override
@@ -117,5 +119,9 @@ public class MPEnemy extends MPPlayer implements Interactable {
         }
 
         super.tick();
+    }
+    @Override
+    public PlayerPacket getPacket() {
+        return new PlayerPacket(getUUID().toString(),getX(),getY(),  getScore(), getColor().getRed(), getColor().getGreen(), getColor().getBlue(), getName(), false);
     }
 }

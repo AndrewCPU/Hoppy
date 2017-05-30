@@ -313,4 +313,22 @@ public class MPPlayer implements Tickable, Body {
         return new Point(body.getRectangle().x,body.getRectangle().y).distance(new Point(getRectangle().x,getRectangle().y));
     }
 
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public void speak(String s){
+        MPServer.getInstance().getServer().sendToAllTCP(new NotificationPacket(s, getUUID().toString()));
+    }
+    public void speakTo(MPPlayer player, String s){
+        if(player.getConnection() != null)
+            player.getConnection().sendTCP(new NotificationPacket(s,getUUID().toString()));
+        if(getConnection() != null)
+            getConnection().sendTCP(new NotificationPacket(s,getUUID().toString()));
+    }
+
 }

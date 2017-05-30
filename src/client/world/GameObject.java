@@ -10,14 +10,19 @@ import java.util.UUID;
  */
 public class GameObject {
     public static GameObject fromPacket(ObjectPacket packet){
-        return new GameObject(new Rectangle(packet.getX(),packet.getY(),packet.getWidth(),packet.getHeight()), UUID.fromString(packet.getUUID()));
+        return new GameObject(new Rectangle(packet.getX(),packet.getY(),packet.getWidth(),packet.getHeight()), UUID.fromString(packet.getUUID()), packet.getType(),packet.getImageURL());
     }
 
     private Rectangle rectangle;
     private UUID uuid;
-    public GameObject(Rectangle rectangle, UUID uuid) {
+    private int type;
+    private String image;
+
+    public GameObject(Rectangle rectangle, UUID uuid, int type, String image) {
         this.rectangle = rectangle;
         this.uuid = uuid;
+        this.type = type;
+        this.image = image;
     }
 
     public UUID getUUID() {
@@ -30,6 +35,22 @@ public class GameObject {
 
     public void setRectangle(Rectangle rectangle) {
         this.rectangle = rectangle;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public void apply(ObjectPacket packet){
