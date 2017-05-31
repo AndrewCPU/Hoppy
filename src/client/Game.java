@@ -1,7 +1,9 @@
 package client;
 
 import client.drawing.Canvas;
+import client.drawing.ImageDatabase;
 import client.gui.Notification;
+import client.world.GameObject;
 import client.world.Player;
 import client.world.World;
 import com.esotericsoftware.kryonet.Client;
@@ -113,6 +115,17 @@ public class Game extends JFrame implements KeyListener,MouseListener{
                 canvas.showNotification(new Notification(packet.getMessage(),UUID.fromString(packet.getUUID())));
             else
                 canvas.showNotification(new Notification(((NotificationPacket)o).getMessage()));
+        }
+        if(o instanceof RemoveObjectPacket){
+            GameObject object = world.getGameObjectFromUUID(UUID.fromString(((RemoveObjectPacket) o).getUUID()));
+            if(object != null)
+                world.removeObject(object);
+        }
+        if(o instanceof BackgroundPacket){
+            if(((BackgroundPacket) o).getImage().length() > 0) {
+                ImageDatabase.getInstance().get(((BackgroundPacket) o).getImage());
+            }
+            canvas.setBackgroundPath(((BackgroundPacket) o).getImage());
         }
 //        Log.d("PACKET RECEIVED");
     }

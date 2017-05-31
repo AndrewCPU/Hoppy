@@ -122,6 +122,8 @@ public class MPBullet implements Tickable,Body{
     }
 
     public void step(){
+
+        MPRoom room = world.getRoomFromBullet(this);
         double slope = velY / velX;
 
         if(velX > 0) {
@@ -132,9 +134,9 @@ public class MPBullet implements Tickable,Body{
             y -= slope * speed;
             x-=speed;
         }
-        MPPlayer player = world.doesBulletHitPlayer((int)x,(int)y);
+        MPPlayer player = world.doesBulletHitPlayer((int)x,(int)y, room);
 
-        if(world.isSafeMove((int)x,(int)y)) {
+        if(world.isSafeMove((int)x,(int)y, room)) {
             if (player != null && player != getShooter()) {
                // Log.e("BULLET DIED WHEN HITTING " + player.getUUID().toString() + " , " + player.getName());
                 setAlive(false);

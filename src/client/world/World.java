@@ -65,6 +65,10 @@ public class World {
         bullets.remove(bullet);
     }
 
+    public void removeObject(GameObject object){
+        gameObjects.remove(object);
+    }
+
     public Bullet getBulletFromUUID(UUID uuid){
         for(Bullet bullet : bullets)
             if(bullet.getUUID().toString().equals(uuid.toString()))

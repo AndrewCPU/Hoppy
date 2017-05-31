@@ -126,8 +126,8 @@ public class MPPlayer implements Tickable, Body {
     public boolean canMove(int x, int y){
         int width = 50;
         int height = 50;
-
-        return world.isSafeMove(x,y) && world.isSafeMove(x + width, y) && world.isSafeMove(x, y + height) && world.isSafeMove(x + width, y + height);
+        MPRoom room = world.getRoomFromPlayer(this);
+        return world.isSafeMove(x,y, room) && world.isSafeMove(x + width, y, room) && world.isSafeMove(x, y + height, room) && world.isSafeMove(x + width, y + height, room);
 
     }
 
@@ -144,19 +144,19 @@ public class MPPlayer implements Tickable, Body {
     }
 
     public void onPress(int key){
-        if(key == KeyEvent.VK_F){
-
-            int x = lastDirection * width + (lastDirection * 5);
-
-            world.addObject(new MPInteractableObject(new Rectangle(getX() + x,getY(),getWidth(),getHeight()), Interaction.DOOR, world));
-        }
+//        if(key == KeyEvent.VK_F){
+//
+//            int x = lastDirection * width + (lastDirection * 5);
+//
+//            world.addObject(new MPInteractableObject(new Rectangle(getX() + x,getY(),getWidth(),getHeight()), Interaction.DOOR, world));
+//        }
         if(key == KeyEvent.VK_E){
-            for(MPObject object : world.getObjects()){
+            for(MPObject object : world.getRoomFromPlayer(this).getObjects()){
 
                 if(object.distance(this) <= 100)
                 {
                     if(object instanceof Interactable){
-                        ((Interactable)object).interact();
+                        ((Interactable)object).interact(this);
                     }
                 }
             }
@@ -180,7 +180,7 @@ public class MPPlayer implements Tickable, Body {
 
     @Override
     public void tick() {
-
+        MPRoom room = world.getRoomFromPlayer(this);
         int speed = isPressing(KeyEvent.VK_SHIFT) ? 8 : 5;
 
         if(isPressing(KeyEvent.VK_A)) {
@@ -200,7 +200,7 @@ public class MPPlayer implements Tickable, Body {
             }
         }
         if(isPressing(KeyEvent.VK_SPACE)) {
-            if (yMod == 0 && getWorld().isSafeMove(x,y + 5))
+            if (yMod == 0 && getWorld().isSafeMove(x,y + 5, room))
                 yMod = -15;
 
         }
@@ -211,7 +211,7 @@ public class MPPlayer implements Tickable, Body {
             setY(0);
 //            world.getBullets().forEach((b)->b.setAlive(false));
         }
-        if (!world.isSafeMove((int)(x + velX), y)){
+        if (!world.isSafeMove((int)(x + velX), y, room)){
              velX = 0;
         }
         x+=velX;

@@ -23,6 +23,8 @@ public class ImageDatabase {
     }
     public BufferedImage get(String s){
         boolean found = false;
+        if(s.length() <= 10)
+            return null;
         for(String string : images.keySet())
             if(string.equalsIgnoreCase(s))
                 found = true;
@@ -33,7 +35,9 @@ public class ImageDatabase {
                 BufferedImage img = ImageIO.read(new URL(s));
                 images.put(s.toUpperCase(),img);
                 Log.d("Loaded images: " + images.keySet().size());
-            }catch (Exception ex){}
+            }catch (Exception ex){
+                return null;
+            }
         }
         return images.get(s.toUpperCase());
     }

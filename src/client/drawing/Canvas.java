@@ -25,14 +25,12 @@ import java.util.stream.Collectors;
 public class Canvas extends JComponent implements MouseMotionListener{
     private World world;
     private Image background;
+    private String backgroundPath;
     private Point cur;
     private ImageDatabase database = new ImageDatabase();
     public Canvas(World world){
         //addMouseMotionListener(this);
         this.world = world;
-        try{
-            background = Toolkit.getDefaultToolkit().getImage(getClass().getResource("/imgs/background.png"));
-        }catch (Exception ex){ex.printStackTrace();}
     }
 
     public World getWorld() {
@@ -43,6 +41,14 @@ public class Canvas extends JComponent implements MouseMotionListener{
         this.world = world;
     }
 
+    public String getBackgroundPath() {
+        return backgroundPath;
+    }
+
+    public void setBackgroundPath(String backgroundPath) {
+        this.backgroundPath = backgroundPath;
+        background = database.get(backgroundPath);
+    }
 
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -56,7 +62,7 @@ public class Canvas extends JComponent implements MouseMotionListener{
 
     @Override
     public void paint(Graphics g) {
-        g.setColor(new Color(127,160, 167)); //todo follow uid
+        g.setColor(new Color( 23, 102, 242)); //todo follow uid
         int yOffset = 0;
         int xOffset = 0;
         //250 = 10 + y
@@ -64,15 +70,54 @@ public class Canvas extends JComponent implements MouseMotionListener{
             xOffset = getWidth() / 2 - world.getPlayerFromUUID(Game.getInstance().getUUID()).getX();
             yOffset = getHeight() - ((int)(getHeight() / 2.5)) - world.getPlayerFromUUID(Game.getInstance().getUUID()).getY();
         }
+        if(background == null) {
+            int size = new Random().nextInt(51 - 20) + 20;
+            int radius = 50 * 50;
+            for (int i = -size; i < getWidth() + size; i += size) {
+                for (int j = -size; j < getHeight() + size; j += size) {
 
-        g.fillRect(0,0,getWidth(),getHeight());
+                    double r = 255;
+                    double green = 255;
+                    double b = 255;
+
+                    double dist = new Point(i, j).distance(getWidth() / 2, getHeight() / 2);
+
+                    if (dist < radius) {
+                        r *= (dist / radius);
+                        green *= (dist / radius);
+                        b *= (dist / radius);
 
 
-        int yOf = (yOffset / 6);
-        g.drawImage(background,   -getWidth() + (xOffset / 6),0 + yOf, getWidth(), getHeight(), null);
-        g.drawImage(background, (xOffset / 6),0 + yOf, getWidth(), getHeight(), null);
-        g.drawImage(background, getWidth() + (xOffset / 6),0 + yOf, getWidth(), getHeight(), null);
+                        r *= Math.abs(255 * Math.sin((0.001) * xOffset)) / 255;
+                        b *= Math.abs(255 * Math.sin((0.001) * xOffset + 20)) / 255;
+                        green *= Math.abs(255 * Math.sin((0.001) * xOffset - 10)) / 255;
 
+                        // r *= 1 / (yOffset % 256 ==0 ? 1 : yOffset % 256);
+                        //b *= (xOffset % 255) / 256;
+
+                        r = 255 - r;
+                        b = 255 - b;
+                        //green = 255 - green;
+
+
+                    }
+
+                    g.setColor(new Color((int) r, (int) green, (int) b));
+
+                    g.fillRect(i, j, 100, 100);
+                }
+            }
+        }
+        //g.fillRect(0,0,getWidth(),getHeight());
+
+
+        int yOf = (yOffset / 6) - 20;
+        if(background != null) {
+            //g.drawImage(background, -getWidth() + (xOffset / 6), 0 + yOf, getWidth(), getHeight(), null);
+            //g.drawImage(background, (xOffset / 6), 0 + yOf, getWidth(), getHeight(), null);
+            //g.drawImage(background, getWidth() + (xOffset / 6), 0 + yOf, getWidth(), getHeight(), null);
+            g.drawImage(background,0,0,getWidth(),getHeight(),null);
+        }
         try{
             for(Player player : world.getPlayers()){
                 g.setColor(player.getColor());
@@ -129,6 +174,8 @@ public class Canvas extends JComponent implements MouseMotionListener{
                 }
             }
             for(Bullet bullet : world.getBullets()){
+                if(bullet == null)
+                    continue;
                 if(bullet.getX() + xOffset < 0 || bullet.getX() + xOffset> getWidth() || bullet.getY() + yOffset > getHeight() || bullet.getY() + yOffset < 0)
                     continue;
 

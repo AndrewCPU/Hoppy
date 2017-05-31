@@ -80,7 +80,7 @@ public class MPServer {
         Log.i("Registered listener...");
         server.start();
         Log.i("Starting server...");
-        //world.addObject(new MPObject(new Rectangle(0,250,1000,50),world));
+        //outside.queue(new MPObject(new Rectangle(0,250,1000,50),world));
         Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(()->{
             world.tick();
             updatePlayers();
@@ -114,9 +114,12 @@ public class MPServer {
         int y = 1000;
         int width = 8000;
         int height = 500;
+        MPRoom castle = world.createRoom("CASTLE");
+        castle.setBackgroundImage("http://www.drodd.com/images14/black11.jpg");
         Random random = new Random();
         MPObject object = new MPObject(new Rectangle(x,y,width,height),world);
-        world.addObject(object);
+        MPRoom outside = world.getRoomFromID("OUTSIDE");
+        world.getRoomFromID("OUTSIDE").queue(object);
         MPNPC questGiver = NPCMaker.createNPC(50,50,world,"Welcome! They call me %last_name%, %name%... I need your help fighting the ninjas! Follow me!");
         Action reset = new Action(questGiver,9999999){
             @Override
@@ -150,7 +153,27 @@ public class MPServer {
 
         questGiver.addAction(starterAction);
         questGiver.addAction(reset);
-        MPInteractableObject door = new MPInteractableObject(new Rectangle(2000,800,100,199), Interaction.DOOR,world);
+        MPInteractableObject door = new MPInteractableObject(new Rectangle(2000,800,100,199), Interaction.DOOR,world){
+            @Override
+            public void interact() {
+                super.interact();
+            }
+
+            @Override
+            public void interact(MPPlayer player) {
+
+                MPRoom currentRoom = player.getWorld().getRoomFromPlayer(player);
+                currentRoom.leaveRoom(player);
+
+                castle.queue(player);
+
+                //super.interact(player);
+            }
+        };
+
+
+
+
         questGiver.addAction(new Action(questGiver,999999){
             @Override
             public void run() {
@@ -212,13 +235,13 @@ public class MPServer {
                         }
                     });
                     npc.interact(getNpc().getTrigger());
-                    world.addPlayer(npc);
+                    outside.queue(npc);
                 }
             }
         });
-        world.addPlayer(questGiver);
+        outside.queue(questGiver);
         door.setImage("http://www.glenviewdoors.com/PRODUCT-DETAILS-Stock-Entry-Doors-GD/012T_Mahogany-Walnut/big.jpg");
-        world.addObject(door);
+        outside.queue(door);
         MPObject wall = new MPObject(new Rectangle(3900,0, 100, 999), world);
         MPObject wall2 = new MPObject(new Rectangle(-4100,0, 100, 1999), world);
         MPObject roof = new MPObject(new Rectangle(2000,500, 1900, 100), world);
@@ -231,12 +254,12 @@ public class MPServer {
         topDoor.setImage(wall.getImage());
         wall2.setImage("http://media.indiedb.com/images/articles/1/119/118275/auto/Brick_Wall_01.jpg");
 
-        world.addObject(topDoor);
-        world.addObject(wall);
-        world.addObject(wall2);
+        outside.queue(topDoor);
+        outside.queue(wall);
+        outside.queue(wall2);
 
         roof.setImage("https://s-media-cache-ak0.pinimg.com/736x/42/54/51/4254512a8d78430c334f8faec2e5367d.jpg");
-        world.addObject(roof);
+        outside.queue(roof);
         for(int i = 0; i<5; i++){
             int randX = random.nextInt(3900 - 2100) + 2100 ;
             MPEnemy enemy = new MPEnemy(randX, 600, world){
@@ -247,71 +270,71 @@ public class MPServer {
             };
             Log.d("ENEMY:" + randX);
             enemy.setName("Ninja");
-            world.addPlayer(enemy);
+            outside.queue(enemy);
         }
         for(int YY = 0; YY<=480; YY+=150){
             int XX = random.nextBoolean() ? -random.nextInt(3500) : random.nextInt(1500);
             MPPhysicsObject physicsObject = new MPPhysicsObject(new Rectangle(XX, YY, 200, 140),world, false);
             physicsObject.setImage("https://s-media-cache-ak0.pinimg.com/originals/dc/a6/95/dca6956e7b22e07ed1fc6110d124914b.jpg");
-            world.addObject(physicsObject);
+            outside.queue(physicsObject);
         }
 
-
+        castle.queue(new MPObject(new Rectangle(-2000,1000,4000,100),world));
     }
 
-    public void generateMap(){
-        int x = -4000;
-        int y = 1000;
-        int width = 8000;
-        int height = 500;
-        MPObject object = new MPObject(new Rectangle(x,y,width,height),world);
-        world.addObject(object);
-        Random r = new Random();
-        outer:
-        for(int i = 0; i< 20; i++){
-            int blockX = r.nextBoolean() ? r.nextInt(4000) : -r.nextInt(4000);
-            int blockY = r.nextInt(800);
-            int blockWidth = r.nextInt(400 - 100) + 100;
-            int blockHeight = r.nextInt(200 - 50) + 50;
-            blockY -= blockHeight;
-//            boolean bad = false;
-            MPObject o = new MPObject(new Rectangle(blockX,blockY,blockWidth,blockHeight),world);
-            for(MPObject mpObject : world.getObjects()){
-                if(mpObject.getRectangle().intersects(o.getRectangle())){
-                    continue outer;
-//                    i--;
-                }
-            }
-            world.addObject(o);
-        }
-
-
-
-        MPObject wallLeft = new MPObject(new Rectangle(-4050,-1000,50,4000), world);
-        MPObject wallRight = new MPObject(new Rectangle(4000,-1000,50,4000), world);
-        world.addObject(wallLeft);
-        world.addObject(wallRight);
-
-        for(int i = 0; i<5; i++){
-            int pX = r.nextBoolean()  ? -r.nextInt(3000) : r.nextInt(3000);
-            int pY = -r.nextInt(1000);
-            int pW = r.nextInt(400 - 200) + 200;
-            int pH = 100;
-            MPPhysicsObject phys = new MPPhysicsObject(new Rectangle(pX,pY,pW,pH),world,false);
-//            phys.velocity = r.nextInt(6 - 1) + 1;
-            world.addObject(phys);
-        }
-
-        for(int i = 0; i<3; i++){
-            int eX  = r.nextBoolean() ? -r.nextInt(3000)  : r.nextInt(3000);
-//            MPEnemy enemy = new MPEnemy(eX,0, world);
-//            enemy.setName("Enemy");
-
-            world.addPlayer(NPCMaker.createNPC(eX,0,world,"Hi there how are you today?", "I'm really sad lately,", "Do you want to be my friend?", "They call me %name%."));
-        }
-
-
-    }
+//    public void generateMap(){
+//        int x = -4000;
+//        int y = 1000;
+//        int width = 8000;
+//        int height = 500;
+//        MPObject object = new MPObject(new Rectangle(x,y,width,height),world);
+//        outside.queue(object);
+//        Random r = new Random();
+//        outer:
+//        for(int i = 0; i< 20; i++){
+//            int blockX = r.nextBoolean() ? r.nextInt(4000) : -r.nextInt(4000);
+//            int blockY = r.nextInt(800);
+//            int blockWidth = r.nextInt(400 - 100) + 100;
+//            int blockHeight = r.nextInt(200 - 50) + 50;
+//            blockY -= blockHeight;
+////            boolean bad = false;
+//            MPObject o = new MPObject(new Rectangle(blockX,blockY,blockWidth,blockHeight),world);
+//            for(MPObject mpObject : world.getObjects()){
+//                if(mpObject.getRectangle().intersects(o.getRectangle())){
+//                    continue outer;
+////                    i--;
+//                }
+//            }
+//            outside.queue(o);
+//        }
+//
+//
+//
+//        MPObject wallLeft = new MPObject(new Rectangle(-4050,-1000,50,4000), world);
+//        MPObject wallRight = new MPObject(new Rectangle(4000,-1000,50,4000), world);
+//        outside.queue(wallLeft);
+//        outside.queue(wallRight);
+//
+//        for(int i = 0; i<5; i++){
+//            int pX = r.nextBoolean()  ? -r.nextInt(3000) : r.nextInt(3000);
+//            int pY = -r.nextInt(1000);
+//            int pW = r.nextInt(400 - 200) + 200;
+//            int pH = 100;
+//            MPPhysicsObject phys = new MPPhysicsObject(new Rectangle(pX,pY,pW,pH),world,false);
+////            phys.velocity = r.nextInt(6 - 1) + 1;
+//            outside.queue(phys);
+//        }
+//
+//        for(int i = 0; i<3; i++){
+//            int eX  = r.nextBoolean() ? -r.nextInt(3000)  : r.nextInt(3000);
+////            MPEnemy enemy = new MPEnemy(eX,0, world);
+////            enemy.setName("Enemy");
+//
+//            outside.queue(NPCMaker.createNPC(eX,0,world,"Hi there how are you today?", "I'm really sad lately,", "Do you want to be my friend?", "They call me %name%."));
+//        }
+//
+//
+//    }
     public java.util.List<MPObject> getObjectsFromFile(File file){
         List<MPObject> objects = new ArrayList<>();
         Scanner scanner = null;
@@ -346,14 +369,14 @@ public class MPServer {
                     int width = Integer.parseInt(split[4]);
                     int height = Integer.parseInt(split[5]);
                     MPObject object = new MPObject(new Rectangle(x,y,width,height),world);
-                    world.addObject(object);
+                    //outside.queue(object);
                 }
                 else if(split[1].equalsIgnoreCase("load")){
                     String path = "";
                     for(int i = 2; i<split.length; i++){
                         path+= split[i] + " ";
                     }
-                    world.setObjects(getObjectsFromFile(new File(path)));
+                    //world.setObjects(getObjectsFromFile(new File(path)));
                     for(MPPlayer player : world.getPlayers())
                     {
                         player.setX(50);
@@ -364,7 +387,7 @@ public class MPServer {
                     MPPlayer player = world.getPlayer(split[2]);
 
                     MPPhysicsObject physicsObject = new MPPhysicsObject(new Rectangle(player.getX(),player.getY() - 100,200,50),world, false);
-                    world.addObject(physicsObject);
+                    //outside.queue(physicsObject);
                 }
             }
             else if(split[0].equals("e")){
@@ -372,7 +395,7 @@ public class MPServer {
                     MPPlayer player = world.getPlayer(split[2]);
                     MPEnemy enemy = new MPEnemy(player.getX(),player.getY(),world);
                     enemy.setName(split[3]);
-                    world.addPlayer(enemy);
+                    //outside.queue(enemy);
                 }
             }
             else if(split[0].equalsIgnoreCase("kill")){
@@ -390,36 +413,33 @@ public class MPServer {
     }
     public void updatePlayers(){
         List<MPPlayer> deadPlayers = new ArrayList<>();
-        for(MPPlayer player : world.getPlayers()) {
-
-            if(player.getConnection() == null || player.getConnection().isConnected())
-            {
-                server.sendToAllTCP(player.getPacket());
-            }
-            else{
-                deadPlayers.add(player);
+        for(MPRoom room : world.getRooms()){
+            List<Object> packets = new ArrayList<>();
+            for(MPPlayer player : room.getPlayers())
+                packets.add(player.getPacket());
+            for(MPObject object : room.getObjects())
+                packets.add(object.getPacket());
+            for(MPBullet bullet : room.getBullets())
+                packets.add(bullet.getPacket());
+            packets.add(new BackgroundPacket(room.getBackgroundImage()));
+            for(MPPlayer player : room.getPlayers()) {
+                if (player.getConnection() != null) {
+                    for (Object o : packets) {
+                        player.getConnection().sendTCP(o);
+                    }
+                    NamePacket namePacket = new NamePacket();
+                    namePacket.setUuid(player.getUUID().toString());
+                    player.getConnection().sendTCP(namePacket);
+                }
             }
         }
-        for(MPPlayer p : deadPlayers){
-            disconnect(p.getConnection());
-        }
-        for(MPObject object : world.getObjects())
-            server.sendToAllTCP(object.getPacket());
-        for(MPBullet bullet : world.getBullets())
-            server.sendToAllTCP(bullet.getPacket());
     }
 
     public void click(MPPlayer player, Point point){
         double rise = 1 - (point.y - (player.getY() - 1));
         double run = 1 - (point.x - (player.getX() - 1));
-        // Log.d("");
-        //Log.d(rise + " = rise");
-        //Log.d(run+ " = run");
-
-
         MPBullet bullet = new MPBullet(player.getX() + 25, player.getY() + 25, -run, -rise,player,world);
-        //System.out.println(slope);
-        world.addBullet(bullet);
+        world.getRoomFromPlayer(player).queue(bullet);
     }
     public void receive(Connection connection, Object o){
         if(o instanceof KeyPacket){
@@ -449,7 +469,7 @@ public class MPServer {
             NamePacket packet = new NamePacket("");
             packet.setUuid(player.getUUID().toString());
 
-            connection.sendTCP(packet);
+            //connection.sendTCP(packet);
 
             server.sendToAllTCP(new NotificationPacket(player.getName() + " has joined the game..."));
 
@@ -471,7 +491,7 @@ public class MPServer {
 
     public void connect(Connection connection){
         MPPlayer player = new MPPlayer(50,50,connection, world) ;
-        world.addPlayer(player);
+        world.getRoomFromID("OUTSIDE").queue(player);
         Log.i("A player has connected from " + connection.getRemoteAddressTCP().toString());
     }
 

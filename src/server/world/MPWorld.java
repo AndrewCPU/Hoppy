@@ -12,65 +12,70 @@ import java.util.List;
  * Created by stein on 5/14/2017.
  */
 public class MPWorld {
-    private List<MPPlayer> players = new ArrayList<>();
-    private List<MPObject> objects = new ArrayList<>();
-    private List<MPBullet> bullets = new ArrayList<>();
+    private List<MPRoom> rooms = new ArrayList<>();
+    private MPRoom outside;
     public MPWorld(){
-
+        outside = new MPRoom("OUTSIDE");
+        rooms.add(outside);
     }
 
-    public List<MPPlayer> getPlayers() {
+    public MPRoom createRoom(){
+        rooms.add(new MPRoom());
+        return rooms.get(rooms.size() - 1);
+    }
+    public MPRoom createRoom(String s){
+        rooms.add(new MPRoom(s));
+        return rooms.get(rooms.size() - 1);
+    }
+
+    public List<MPRoom> getRooms() {
+        return rooms;
+    }
+
+    public MPRoom getRoomFromID(String id){
+        for(MPRoom room : rooms){
+            if(room.getID().equalsIgnoreCase(id))
+                return room;
+        }
+        return null;
+    }
+
+    public List<MPPlayer> getPlayers(){
+        List<MPPlayer> players = new ArrayList<>();
+        for(MPRoom room : rooms)
+            for(MPPlayer player : room.getPlayers())
+                players.add(player);
         return players;
     }
 
-
-    public void addPlayer(MPPlayer player){
-        queue(player);
+    public MPRoom getRoomFromPlayer(MPPlayer player){
+        for(MPRoom room : rooms){
+            if(room.getPlayers().contains(player))
+                return room;
+        }
+        return null;
     }
-    public void addObject(MPObject object){
-        queue(object);
+    public MPRoom getRoomFromObject(MPObject object){
+        for(MPRoom room : rooms){
+            if(room.getObjects().contains(object))
+                return room;
+        }
+        return null;
     }
-
-
-    public void setPlayers(List<MPPlayer> players) {
-        this.players = players;
+    public MPRoom getRoomFromBullet(MPBullet bullet){
+        for(MPRoom room : rooms)
+            if(room.getBullets().contains(bullet))
+                return room;
+        return null;
     }
-
-    public List<MPObject> getObjects() {
-        return objects;
-    }
-
-    public void setObjects(List<MPObject> objects) {
-        this.objects = objects;
-    }
-
-    private List<Object> objectQueue = new ArrayList<>();
-
-    public void queue(Object o){
-        objectQueue.add(o);
-    }
-
-    public void addBullet(MPBullet bullet){
-        queue(bullet);
-    }
-
-    public List<MPBullet> getBullets() {
-        return bullets;
-    }
-
-    public void setBullets(List<MPBullet> bullets) {
-        this.bullets = bullets;
-    }
-
-    public boolean isSafeMove(int x, int y){
-        for(MPObject object : objects){
+    public boolean isSafeMove(int x, int y, MPRoom room){
+        for(MPObject object : room.getObjects()){
             if(object.getRectangle().contains(x,y)) return false;
         }
         return true;
     }
-
-    public MPPlayer doesBulletHitPlayer(int x, int y){
-        for(MPPlayer player : players){
+    public MPPlayer doesBulletHitPlayer(int x, int y, MPRoom room){
+        for(MPPlayer player : room.getPlayers()){
             if(player.getBounds().contains(x,y))
                 return player;
         }
@@ -78,24 +83,24 @@ public class MPWorld {
     }
 
     public MPPlayer getPlayer(Connection connection){
-        for(MPPlayer player : players){
+        for(MPPlayer player : getPlayers()){
             if(player.getConnection() == connection)
                 return player;
         }
         return null;
     }
+
     public MPPlayer getPlayer(String name){
-        for(MPPlayer player : players){
+        for(MPPlayer player : getPlayers()){
             if(player.getName().equalsIgnoreCase(name))
                 return player;
         }
         return null;
     }
 
-
     public MPPlayer getNearestPlayer(MPPlayer player){
         MPPlayer closest = null;
-        for(MPPlayer p : players){
+        for(MPPlayer p : getRoomFromPlayer(player).getPlayers()){
             if(p != player && !(p instanceof MPEnemy)){
                 if(closest == null)
                     closest = p;
@@ -109,7 +114,7 @@ public class MPWorld {
 
     public MPBullet getNearestBullet(MPPlayer player){
         MPBullet closest = null;
-        for(MPBullet p : bullets){
+        for(MPBullet p : getRoomFromPlayer(player).getBullets()){
             if(p.getShooter() == player)
                 continue;
                 if(closest == null)
@@ -121,27 +126,32 @@ public class MPWorld {
         return closest;
     }
 
+    public List<MPBullet> getBullets(){
+        List<MPBullet> bullets = new ArrayList<>();
+        for(MPRoom room : rooms)
+            bullets.addAll(room.getBullets());
+        return bullets;
+    }
+    public List<MPObject> getObjects(){
+        List<MPObject> objects = new ArrayList<>();
+        for(MPRoom room: rooms)
+            objects.addAll(room.getObjects());
+        return objects;
+    }
+
 
     public void tick(){
-        for(Object o : objectQueue){
-            if(o instanceof MPBullet)
-                bullets.add((MPBullet)o);
-            if(o instanceof MPPlayer)
-                players.add((MPPlayer)o);
-            if(o instanceof MPObject)
-                objects.add((MPObject)o);
-        }
-        objectQueue.clear();
-        for(MPBullet bullet : bullets)
+        for(MPRoom room : rooms)
+            room.tick();
+        for(MPBullet bullet : getBullets())
             bullet.tick();
-        for(MPPlayer player : players)
+        for(MPPlayer player : getPlayers())
             player.tick();
-        for(MPObject object : objects) {
+        for(MPObject object : getObjects())
             object.tick();
-        }
-        for(int i = bullets.size() - 1; i>=0; i--) {
-            if (!bullets.get(i).isAlive()) {
-                MPServer.getInstance().getServer().sendToAllTCP(new RemoveBulletPacket(bullets.remove(i).getUUID()));
+        for(int i = getBullets().size() - 1; i>=0; i--) {
+            if (!getBullets().get(i).isAlive()) {
+                MPServer.getInstance().getServer().sendToAllTCP(new RemoveBulletPacket(getBullets().remove(i).getUUID()));
             }
         }
     }
